@@ -26,3 +26,6 @@ jobs:
       - name: Run tests
         run: |
           uv run pytest tests
+      - name: Run typing
+        run: |
+          uv run mypy src
