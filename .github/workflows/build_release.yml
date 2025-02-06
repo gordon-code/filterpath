@@ -1,0 +1,37 @@
+name: Manually Build Release
+on:
+  workflow_dispatch:
+    inputs:
+      versionNumber:
+        description: "Version number of this release"
+        required: true
+        type: string
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  build_release:
+    name: Build Release
+    needs: test
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing to pypi
+      id-token: write
+      # This permissions is necessary for creating the GitHub release
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: ${{ matrix.python-version }}
+      - name: Build Release
+        run: uv build
+        env:
+          PDM_BUILD_SCM_VERSION: ${{ inputs.versionNumber }}
+      - name: Publish Release
+        run: uv publish
+      - name: Create GitHub Release
+        run: gh release create v${{inputs.versionNumber}} --latest --generate-notes dist/*
