@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/pathquery.iml" filepath="$PROJECT_DIR$/.idea/pathquery.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/filterpath.iml" filepath="$PROJECT_DIR$/.idea/filterpath.iml" />
     </modules>
   </component>
 </project>

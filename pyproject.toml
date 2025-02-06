@@ -1,15 +1,43 @@
 [project]
-name = "pathquery"
-version = "0.1.0"
-description = "Add your description here"
+name = "filterpath"
+dynamic = ["version"]
+description = "Recursively gets and filters dict/list-like objects with a path-like syntax"
 readme = "README.md"
 requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Gordon Code", email = "will@gordoncode.dev"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed"
+]
 dependencies = [
     "loguru>=0.7.3",
 ]
 
+[project.urls]
+repository = "https://github.com/gordon-code/filterpath"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm.version]
+source = "scm"
+
 [dependency-groups]
 dev = [
+    "mypy>=1.15.0",
     "pytest>=8.3.4",
     "ruff>=0.9.4",
 ]
@@ -27,6 +55,7 @@ select = [ "ALL" ]
 ignore = [
     # Specific ignores
     "ISC001",   # Conflicts with `ruff` formatter
+    "ANN401",   # Allow typing.Any
     # Undocumented code
     "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",
     # Broad ignores
@@ -39,10 +68,10 @@ unfixable = ["T201", "F401", "F841"]
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore `assert` in test files (S101), magic values (PLR2004), and private member accessed (SLF001)
-"*_test.py" = ["S101", "PLR2004", "SLF001"]
+"*_test.py" = ["S101", "PLR2004", "SLF001", "ANN"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["src"]
+known-first-party = ["filterpath"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.pydocstyle]
@@ -50,5 +79,5 @@ convention = "numpy"
 
 [tool.pytest.ini_options]
 minversion = "8.1"
-cache_dir = "$XDG_CACHE_HOME/pytest"
+cache_dir = ".cache/pytest"
 python_files = "*_test.py"

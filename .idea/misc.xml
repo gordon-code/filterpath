@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
-    <option name="sdkName" value="Python 3.12 (pdf-to-epub-mAQmGhgy-3.12)" />
+    <option name="sdkName" value="Python 3.11 (filterpath)" />
   </component>
   <component name="PreferredVcsStorage">
     <preferredVcsName>ApexVCS</preferredVcsName>
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 virtualenv at ~/SynologyDrive/ActiveProjects/gordondev/pathquery/.venv" project-jdk-type="Python SDK" />
-  <component name="PyVirtualEnvTerminalCustomizer">
-    <option name="virtualEnvActivate" value="false" />
-  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (filterpath)" project-jdk-type="Python SDK" />
 </project>
