@@ -30,10 +30,10 @@ def get(  # noqa: C901, PLR0915
     :return:
     :rtype: Any | list[Any]
     """
-    escapable_sequences = frozenset({path_separator, "\\"})
+    escapable_sequences = frozenset({path_separator, "\\", "["})
     sentinel = object()
 
-    def _deep_get(_obj: ObjTypes, _path: PathTypes) -> Any | list[Any]:
+    def _deep_get(_obj: ObjTypes, _path: PathTypes, container: list) -> Any | list[Any]:  # noqa: C901
         if _obj is sentinel:
             # STOP: Run out of objects to traverse
             logger.trace("out of objects: raising NoPathExistsError")
@@ -49,15 +49,50 @@ def get(  # noqa: C901, PLR0915
             logger.trace("out of iterables: raising NoPathExistsError")
             raise NoPathExistsError(obj, path)
 
-        key, _path = _parse_path(_path)
+        key, _path, has_container = _parse_path(_path)
         logger.trace(f"current key '{key}' and remaining path '{_path}'")
 
-        logger.trace(f"access '{key}' in {_obj}")
-        return _deep_get(_get_any(_obj, key), _path)
+        if has_container:
+            logger.trace("encountering container")
+            # Strip brackets for any filtering key or function
+            filter_key = key[1:-1]
 
-    def _parse_path(_path: PathTypes) -> tuple[Any, PathTypes]:
+            logger.trace(f"filtering container on '{key}'")
+            try:
+                filtered_obj = _deep_get(_obj, filter_key, container)
+            except KeyError:
+                logger.trace(f"unable to filter '{_obj}' on '{filter_key}', return empty list")
+                return container
+
+            if isinstance(filtered_obj, dict):
+                filtered_obj = filtered_obj.values()
+
+            logger.trace(f"iterating {filtered_obj}")
+            try:
+                filtered_obj = iter(filtered_obj)
+            except TypeError:
+                logger.trace(f"{filtered_obj} not iterable, returning {filtered_obj}")
+                container.append(filtered_obj)
+                return container
+
+            for item in filtered_obj:
+                logger.trace(f"getting path '{_path}' of '{item}'")
+                try:
+                    deep_obj = _deep_get(item, _path, container)
+                    if deep_obj is not container:
+                        container.append(deep_obj)
+                except KeyError:
+                    pass
+
+            return container
+
+        logger.trace(f"access '{key}' in {_obj}")
+        return _deep_get(_get_any(_obj, key), _path, container)
+
+    def _parse_path(_path: PathTypes) -> tuple[Any, PathTypes, bool]:
         if isinstance(_path, str):
             is_escaped = False
+            has_container = _path.startswith("[")
             escape_indexes = []
             for idx, char in enumerate(_path):
                 if not is_escaped:
@@ -75,18 +110,18 @@ def get(  # noqa: C901, PLR0915
                 idx += 1
 
             parsed_path = _remove_char_at_index(_path[:idx], escape_indexes)
-            return parsed_path, _path[idx + 1 :]
+            return parsed_path, _path[idx + 1 :], has_container and parsed_path.endswith("]")
 
         # Get next from _path, operating on a list/tuple
         curr_path = _path[0]
         if isinstance(curr_path, str) and path_separator in curr_path:
             # Parse the returned key for any unescaped subpaths
-            curr_path, remaining_path = _parse_path(curr_path)
+            curr_path, remaining_path, has_container = _parse_path(curr_path)
             if remaining_path:
                 # Prepend the remaining subpath
                 remaining_path = [remaining_path, *_path[1:]]
-            return curr_path, remaining_path
-        return curr_path, _path[1:]
+            return curr_path, remaining_path, has_container
+        return curr_path, _path[1:], False
 
     def _remove_char_at_index(string: str, index: int | list[int]) -> str:
         if isinstance(index, int):
@@ -121,12 +156,12 @@ def get(  # noqa: C901, PLR0915
 
     if isinstance(path, PathTypes):
         try:
-            return _deep_get(obj, path)
-        except NoPathExistsError as err:
+            return _deep_get(obj, path, [])
+        except NoPathExistsError:
             if raise_if_unfound:
                 logger.trace("raise KeyError instead of returning default")
-                raise KeyError from err
+                raise
             logger.trace(f"return default value: {default}")
             return default
     else:
-        raise TypeError from NotPathLikeError(path)
+        raise NotPathLikeError(path)
