@@ -1,8 +1,10 @@
+from collections import defaultdict
 from typing import Any, NamedTuple
 
 import pytest
 
 from filterpath import get
+from filterpath._exceptions import NotPathLikeError
 
 
 class SomeNamedTuple(NamedTuple):
@@ -43,11 +45,9 @@ class Object:
         ({"one": ["two", {"three": [4, 5]}]}, (["one", 1, "three", 1],), 5),
         ({"one": ["two", {"three": [4, 5]}]}, ("one.1.three.1",), 5),
         ({"one": ["two", {"three": [4, 5]}]}, ("one.1.three",), [4, 5]),
-        ({"one": ["two", {"three": [4, 5]}]}, ("one.1.three.1",), 5),
         (["one", {"two": {"three": [4, 5]}}], ("1.two.three.0",), 4),
         (["one", {"two": {"three": [4, [{"four": [5]}]]}}], ("1.two.three.1.0.four.0",), 5),
         (["one", {"two": {"three[1]": [4, [{"four": [5]}]]}}], ("1.two.three[1].0",), 4),
-        (["one", {"two": {"three": [4, [{"four": [5]}]]}}], ("1.two.three.1.0.four.0",), 5),
         (["one", {"two": {"three": [4, [{"four": [5]}], 6]}}], ("1.two.three.-2.0.four.0",), 5),
         (range(50), ("42",), 42),
         (range(50), ("-1",), 49),
@@ -97,3 +97,82 @@ class Object:
 )
 def test_get(obj, args, expected):
     assert get(obj, *args) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("a", [1, 2, {"b": [3, 4]}, {"b": [5, 6]}]),
+        ("0", "c"),
+        ("a.0", 1),
+        ("a\\.0", 11),
+        ("a\\\\\\.0", 12),
+        ("a\\\\.0", 13),
+        ("\\[0]", 9),
+        ("\\\\[0]", 10),
+        ("a.[]", [1, 2, {"b": [3, 4]}, {"b": [5, 6]}]),
+        ("a.b", None),
+        ("a.[b]", []),
+        ("a.[4]", []),
+        ("a.4", None),
+        ("a.[z]", []),
+        ("a.z", None),
+        ("a.b.[]", None),
+        ("[]", [[1, 2, {"b": [3, 4]}, {"b": [5, 6]}], "c", 9, 10, 11, 12, [13], {":0": 99}]),
+        ("[].[]", [1, 2, {"b": [3, 4]}, {"b": [5, 6]}, 13, 99]),
+        ("[].[].[]", [[3, 4], [5, 6]]),
+        ("[].[].[].[]", [3, 4, 5, 6]),
+        ("[].[].[].[].[]", []),
+        ("a.[0]", [1]),
+        ("a.[].0", []),
+        ("a.b.0", None),
+        ("a.2.b.0", 3),
+        ("a.3.b.0", 5),
+        ("a.[].b", [[3, 4], [5, 6]]),
+        ("a.[].b.0", [3, 5]),
+        ("a.[].b.[]", [3, 4, 5, 6]),
+    ],
+)
+def test_get_enhanced(path, expected):
+    obj = {
+        "a": [1, 2, {"b": [3, 4]}, {"b": [5, 6]}],
+        0: "c",
+        "[0]": 9,
+        "\\[0]": 10,
+        "a.0": 11,
+        "a\\.0": 12,
+        "a\\": [13],
+        "x": {":0": 99},
+    }
+    assert get(obj, path) == expected
+
+
+def test_get__should_not_populate_defaultdict():
+    data = defaultdict(list)
+    get(data, "a")
+    assert data == {}
+
+
+@pytest.mark.parametrize(
+    ("obj", "path"),
+    [
+        (Object(), 1),
+        (Object(), Object()),
+    ],
+)
+def test_get__raises_type_error_for_non_pathlike(obj, path):
+    with pytest.raises(TypeError, match="path argument must be one of 'str | list | tuple', not '.*'"):
+        get(obj, path)
+
+
+@pytest.mark.parametrize(
+    ("obj", "path"),
+    [
+        ({"one": {"two": {"three": 4}}}, "one.four"),
+        ({"one": {"two": {"three": 4}}}, "one.four.three"),
+        ({"one": {"two": {"three": [{"a": 1}]}}}, "one.four.three.0.a"),
+    ],
+)
+def test_get__raises_key_error_for_unfound(obj, path):
+    with pytest.raises(KeyError, match=".* does not contain path '.*'"):
+        get(obj, path, raise_if_unfound=True)
