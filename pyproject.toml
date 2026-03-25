@@ -3,7 +3,7 @@ name = "filterpath"
 dynamic = ["version"]
 description = "Recursively gets and filters dict/list-like objects with a path-like syntax"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = "==3.14.3"
 license = {file = "LICENSE"}
 authors = [
     {name = "Gordon Code", email = "will@gordoncode.dev"}
@@ -22,7 +22,7 @@ classifiers = [
     "Typing :: Typed"
 ]
 dependencies = [
-    "loguru>=0.7.3",
+    "loguru==0.7.3",
 ]
 
 [project.urls]
@@ -37,9 +37,9 @@ source = "scm"
 
 [dependency-groups]
 dev = [
-    "mypy>=1.15.0",
-    "pytest>=8.3.4",
-    "ruff>=0.9.4",
+    "mypy==1.15.0",
+    "pytest==8.3.4",
+    "ruff==0.9.4",
 ]
 
 [tool.ruff]
