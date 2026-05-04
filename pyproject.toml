@@ -22,7 +22,7 @@ classifiers = [
     "Typing :: Typed"
 ]
 dependencies = [
-    "loguru>=0.7.3",
+    "loguru==0.7.3",
 ]
 
 [project.urls]
@@ -37,9 +37,9 @@ source = "scm"
 
 [dependency-groups]
 dev = [
-    "mypy>=1.15.0",
+    "mypy==1.15.0",
     "pytest>=8.3.4",
-    "ruff>=0.9.4",
+    "ruff==0.9.4",
 ]
 
 [tool.ruff]
