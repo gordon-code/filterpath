@@ -37,9 +37,9 @@ source = "scm"
 
 [dependency-groups]
 dev = [
-    "mypy==1.15.0",
-    "pytest==9.0.3",
-    "ruff==0.9.4",
+    "mypy==2.3.0",
+    "pytest==9.1.1",
+    "ruff==0.15.21",
 ]
 
 [tool.ruff]
